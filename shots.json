@@ -1,5 +1,6 @@
 [
-  { "name": "1-cover.jpg", "query": "?shot=cover&photo=pier&caption=Sunset%20Heist", "w": 1080, "h": 1080 },
-  { "name": "2-editor.jpg", "query": "?shot=editor&photo=boulevard&caption=Boulevard%20Queen", "w": 1280, "h": 720 },
-  { "name": "3-cover.jpg", "query": "?shot=cover&photo=boulevard&caption=Boulevard%20Queen", "w": 1080, "h": 1080 }
+  { "name": "1-cover.jpg", "query": "?shot=1#export", "view": "Export view: the finished 3-panel 1920x1080 landscape cover, WELCOME TO LEONIDA / VICE NEVER SLEEPS, Vice Sunset grade, film grain and vignette", "w": 1280, "h": 720 },
+  { "name": "2-editor.jpg", "query": "?shot=1#editor", "view": "The editor: live preview of the 3-panel cover with the photo library, layout picker, panel controls, caption, grade presets and export buttons", "w": 1280, "h": 720 },
+  { "name": "3-square.jpg", "query": "?shot=1&size=square#export-square", "view": "Export view: the 1080x1080 square cover, 2 diagonal panels, LEONIDA NIGHTS / SUNSET STATE OF MIND, Neon Vice grade", "w": 1280, "h": 720 },
+  { "name": "4-portrait.jpg", "query": "?shot=1&size=portrait#export-portrait", "view": "Export view: the 1080x1350 portrait cover, 2 diagonal panels, VICE NEVER SLEEPS / WELCOME TO LEONIDA, Dusk grade", "w": 1280, "h": 720 }
 ]
