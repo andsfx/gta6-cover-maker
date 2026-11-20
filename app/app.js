@@ -113,7 +113,13 @@ const state = {
   activePanel: 0,
 };
 
-const newPanel = () => ({ photoId: null, zoom: 1.2, ox: 0, oy: 0, flip: false });
+// Diagonal panels default to a headroom-friendly crop: no extra zoom and the photo
+// top-aligned (oy +1) so a portrait subject's head sits fully inside the frame with the
+// photo's own space above it, instead of the diagonal clip eating the top edge. Zoom below
+// 1.0 would letterbox, because the diag2 bbox is the full canvas; 1.0 + oy 1 is the floor.
+const newPanel = () => (state.layout === 'diag2'
+  ? { photoId: null, zoom: 1.0, ox: 0, oy: 1, flip: false }
+  : { photoId: null, zoom: 1.2, ox: 0, oy: 0, flip: false });
 
 /** The panels of the current layout, st.panels[i] filled to length. */
 function panelStates() {
@@ -246,6 +252,28 @@ function applyGrade(ctx, w, h, grade) {
   ctx.globalAlpha = 1;
 }
 
+/** diag2 only: a soft dark feather band along the diagonal seam so the two halves blend
+ * instead of colliding. A linear gradient runs perpendicular to the seam, transparent at
+ * the band edges, darkest at the divider line itself, which is drawn on top after. */
+function drawDiagonalFeather(ctx, w, h) {
+  if (state.layout !== 'diag2') return;
+  // Seam from (0,h) to (w,0); unit normal (h,w)/L.
+  const L = Math.hypot(w, h);
+  const nx = h / L;
+  const ny = w / L;
+  const s = Math.max(8, (w / 1080) * 12); // ~12px half-band at export size
+  const g = ctx.createLinearGradient(w / 2 - nx * s, h / 2 - ny * s, w / 2 + nx * s, h / 2 + ny * s);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(0.35, 'rgba(0,0,0,0.18)');
+  g.addColorStop(0.5, 'rgba(0,0,0,0.5)');
+  g.addColorStop(0.65, 'rgba(0,0,0,0.18)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.save();
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
+
 /** Bold 1-3px panel dividers (neon glow on the neon grade) plus a faint outer frame. */
 function drawDividers(ctx, w, h, grade) {
   const segs = DIVIDERS[state.layout] ?? [];
@@ -257,7 +285,8 @@ function drawDividers(ctx, w, h, grade) {
   ctx.lineJoin = 'round';
   if (grade === 'neon') {
     ctx.shadowColor = 'rgba(65,240,255,0.95)';
-    ctx.shadowBlur = lw * 3.5;
+    // A tighter glow on the diagonal layout so the seam feather stays visible.
+    ctx.shadowBlur = lw * (state.layout === 'diag2' ? 2.0 : 3.5);
   }
   for (const [a, b] of segs) {
     ctx.beginPath();
@@ -387,6 +416,7 @@ function renderCover(ctx, w, h, st) {
   regions.forEach((region, i) => drawPanel(ctx, w, h, region, panels[i]));
   ctx.restore();
   applyGrade(ctx, w, h, st.grade);
+  drawDiagonalFeather(ctx, w, h);
   drawDividers(ctx, w, h, st.grade);
   if (st.vignette) drawVignette(ctx, w, h);
   if (st.grain) drawGrain(ctx, w, h);
@@ -672,7 +702,9 @@ function applyShotStaging() {
   if (state.size === 'square') {
     state.layout = 'diag2';
     state.panels = [
-      { photoId: 'boardwalk', zoom: 1.3, ox: -1, oy: -1 },
+      // Headroom defaults: both photos top-aligned (oy 1) so faces sit fully inside the
+      // frame with space above; the zooms keep the subjects clear of the seam.
+      { photoId: 'boardwalk', zoom: 1.6, ox: -0.75, oy: 1 },
       { photoId: 'cruiser', zoom: 1.25, ox: 1, oy: 1 },
     ];
     state.caption = 'LEONIDA NIGHTS';
@@ -682,8 +714,8 @@ function applyShotStaging() {
   } else if (state.size === 'portrait') {
     state.layout = 'diag2';
     state.panels = [
-      { photoId: 'cruiser', zoom: 1.32, ox: -0.35, oy: -0.9 },
-      { photoId: 'boulevard', zoom: 1.35, ox: 0.95, oy: 0.95 },
+      { photoId: 'cruiser', zoom: 1.32, ox: -0.35, oy: 1 },
+      { photoId: 'boulevard', zoom: 1.35, ox: 0.95, oy: 1 },
     ];
     state.caption = 'VICE NEVER SLEEPS';
     state.subtitle = 'WELCOME TO LEONIDA';
